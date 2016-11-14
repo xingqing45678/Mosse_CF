@@ -10,7 +10,7 @@ close all;clear all;clc;
 imgDir='.\BlurCar3\';%图片文件夹路径名
 [guroundtruth,img_path,img_files]=Load_image(imgDir);%调用函数读取图片帧
 im = imread([img_path img_files{1}]);%读取目标帧
-im = rgb2gray(im);%转换为灰度图
+% im = rgb2gray(im);%转换为灰度图
     figure
     subplot(1,2,1)
     imshow(im);title('current imge');
@@ -23,7 +23,7 @@ F_response=templateGauss(im);%高斯理想模板
 for frame=1:100%length(img_files)
         %training训练获得模板
         im = imread([img_path img_files{frame}]);%读取目标帧
-        im = rgb2gray(im);%转换为灰度图
+%         im = rgb2gray(im);%转换为灰度图
         F_im= fft2(im);
     if frame>1
         %训练结束开始跟踪并更新模板
