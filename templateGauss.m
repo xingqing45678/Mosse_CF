@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%产生高斯理想响应%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function F_response=templateGauss(im)
     [height,width]=size(im);
-    gaussMaxSize=10;%高斯平面最大值
+    gaussMaxSize=20;%高斯平面最大值,值越大高斯点越小
     x=-gaussMaxSize:gaussMaxSize*2/width:gaussMaxSize-gaussMaxSize*2/width;
     y=-gaussMaxSize:gaussMaxSize*2/height:gaussMaxSize-gaussMaxSize*2/width;
     [X,Y]=meshgrid(x,y);%

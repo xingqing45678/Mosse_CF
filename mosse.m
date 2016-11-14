@@ -20,7 +20,7 @@ im = rgb2gray(im);%转换为灰度图
 %产生高斯理想模板
 F_response=templateGauss(im);%高斯理想模板
 %主循环读取全部图像帧
-for frame=1:50%length(img_files)
+for frame=1:100%length(img_files)
         %training训练获得模板
         im = imread([img_path img_files{frame}]);%读取目标帧
         im = rgb2gray(im);%转换为灰度图
