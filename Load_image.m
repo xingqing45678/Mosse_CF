@@ -3,13 +3,13 @@ function [guroundtruth,img_path,img_files]=Load_image(imgDir)
 %     %% Read params.txt
 %     params = readParams('params.txt');
 	%% load video info
-    sequence_path=imgDir;%文件路径
-    img_path = [sequence_path 'imgs/'];
+    sequence_path = [imgDir,'/'];%文件路径
+    img_path = [sequence_path 'img/'];
     %% Read files 
-    guroundtruth = csvread([sequence_path 'groundtruth.txt']);%序列中真实目标位置
+    guroundtruth = csvread([sequence_path 'groundtruth_rect.txt']);%序列中真实目标位置
     %%%%%%%%%%%%%%%%%%%%%%%%%
     % read all the frames in the 'imgs' subfolder
-    dir_content = dir([sequence_path 'imgs/']);
+    dir_content = dir([sequence_path 'img/']);
     % skip '.' and '..' from the count
     n_imgs = length(dir_content) - 2;
     img_files = cell(n_imgs, 1);
