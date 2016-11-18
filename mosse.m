@@ -9,11 +9,11 @@
 close all;clear all;clc;
 %% 载入视频文件
 % videoDir = 'D:\ImageData\David';
-% [videoData,target] = Load_video(videoDir);%调用函数读取视频，读取groundtruth数据
+% [videoData,ground_truth] = Load_video(videoDir);%调用函数读取视频，读取groundtruth数据
 % img = read(videoData,1);% 读取第一帧
 %% 载入图片文件
 imgDir='D:\ImageData\Coke';%图片文件夹路径名
-[target,img_path,img_files]=Load_image(imgDir);%调用函数读取图片帧，读取groundtruth数据
+[ground_truth,img_path,img_files]=Load_image(imgDir);%调用函数读取图片帧，读取groundtruth数据
 img = imread([img_path img_files{1}]);%读取目标帧
 %% 起始帧，终止帧
 startFrame=1;%起始帧
@@ -26,8 +26,11 @@ else
     im = rgb2gray(img);%转换为灰度图
 end
 %% 获取目标位置和框大小
-target_sz=[target(4) target(3)];%h,w
-pos=[target(2),target(1)]+floor(target_sz/2);%目标框中心点
+%% set initial position and size
+target_sz = [ground_truth(1,4), ground_truth(1,3)];
+pos = [ground_truth(1,2), ground_truth(1,1)] + floor(target_sz/2);
+time = 0;  %to calculate FPS
+positions = zeros(numel(img_files), 2);  %to calculate precision
 %产生高斯理想模板
 F_response=templateGauss(target_sz,im);%高斯理想模板
 %% 主循环读取全部图像帧
@@ -42,6 +45,7 @@ for frame=startFrame:endFrame
             im = rgb2gray(img);%转换为灰度图
         end
         target_box=getsubbox(pos,target_sz,im);%获取目标框s
+        tic()
        %% 训练结束开始跟踪并更新模板
     if frame>startFrame
         newPoint=real(ifft2(F_Template.*fft2(target_box)));%进行反变换
@@ -51,6 +55,10 @@ for frame=startFrame:endFrame
         [row, col,~] = find(newPoint == max(newPoint(:)), 1);
         pos = pos - target_sz/2 + [row, col]; 
     end
+    %%
+    %save position and calculate FPS
+	positions(frame,:) = pos;
+	time = time + toc();
     F_im= fft2(getsubbox(pos,target_sz,im));
 %     F_Template=F_response./(F_im+eps);%CF模板更新   
     F_Template=conj(F_im.*conj(F_response)./(F_im.*conj(F_im)+eps));%mosse模板更新      
@@ -85,4 +93,8 @@ for frame=startFrame:endFrame
 %         hold off;
 %         drawnow;
 end
+disp(['Frames-per-second: ' num2str(numel(img_files) / time)])
+
+%show the precisions plot
+show_precision(positions, ground_truth, imgDir)
 
