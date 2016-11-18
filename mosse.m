@@ -4,56 +4,46 @@
 %MOSSE
 %date:2016-11-10
 %author:WeiQin
+%E-mail:285980893@qq.com
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 close all;clear all;clc;
+%% 载入视频文件
+% videoDir = 'D:\ImageData\David';
+% [videoData,target] = Load_video(videoDir);%调用函数读取视频，读取groundtruth数据
+% img = read(videoData,1);% 读取第一帧
 %% 载入图片文件
-imgDir='D:\ImageData\David';%图片文件夹路径名
-[groundtruth,img_path,img_files]=Load_image(imgDir);%调用函数读取图片帧
+imgDir='D:\ImageData\Coke';%图片文件夹路径名
+[target,img_path,img_files]=Load_image(imgDir);%调用函数读取图片帧，读取groundtruth数据
 img = imread([img_path img_files{1}]);%读取目标帧
+%% 起始帧，终止帧
 startFrame=1;%起始帧
+endFrame=length(img_files);%载入图片文件Load_image时的终止帧
+% endFrame=videoData.NumberOfFrames;%载入视频文件Load_vedio时的终止帧
+%% 转换为灰度图像
 if(size(img,3)==1) %灰度图像
     im=img;
 else
     im = rgb2gray(img);%转换为灰度图
 end
-%     figure
-%     subplot(1,2,1)
-%     imshow(im);title('current imge');
-%载入视频文件
-% videoDir= '.\video\03_pedestrian1\pedestrian1.mpg';
-% videoData=Load_video(videoDir);
-if(size(groundtruth,2)==1)%一列
-    target=groundtruth(1:4);%x,y,w,h目标框大小
-else if(size(groundtruth,2)==4)%4列
-    target=groundtruth(1,1:4);%x,y,w,h目标框大小
-else
-    error('something wrong in groundtruth');
-    end
-end
-%% 超出图像范围的目标取图像边缘
-if rem(target(3),2)==1
-    target(3)=target(3)+1;
-end
-if rem(target(4),2)==1
-    target(4)=target(4)+1;
-end
+%% 获取目标位置和框大小
 target_sz=[target(4) target(3)];%h,w
-pos=[target(2)+target(4)/2,target(1)+target(3)/2];%目标框中心点
-target_box=getsubbox(pos,target_sz,im);%获取目标框s
+pos=[target(2),target(1)]+floor(target_sz/2);%目标框中心点
 %产生高斯理想模板
 F_response=templateGauss(target_sz,im);%高斯理想模板
 %% 主循环读取全部图像帧
-for frame=startFrame:length(img_files)
-        %training训练获得模板
-        img = imread([img_path img_files{frame}]);%读取目标帧
+for frame=startFrame:endFrame
+       %% training训练获得模板
+        img = imread([img_path img_files{frame}]);%读取目标帧(载入图片文件Load_image时)
+%         img = read(videoData,frame);% 读取目标帧(载入视频文件Load_vedio时)
+       %% 转换为灰度图像
         if(size(img,3)==1) %灰度图像
             im=img;
         else
             im = rgb2gray(img);%转换为灰度图
         end
         target_box=getsubbox(pos,target_sz,im);%获取目标框s
+       %% 训练结束开始跟踪并更新模板
     if frame>startFrame
-        %% 训练结束开始跟踪并更新模板
         newPoint=real(ifft2(F_Template.*fft2(target_box)));%进行反变换
 %         newPoint=uint8(newPoint);
 %         subplot(1,2,1)
@@ -66,15 +56,33 @@ for frame=startFrame:length(img_files)
     F_Template=conj(F_im.*conj(F_response)./(F_im.*conj(F_im)+eps));%mosse模板更新      
         %% 画图
 %         subplot(1,2,2)
-        imagesc(uint8(img))
-        colormap(gray)
         rect_position = [pos([2,1]) - (target_sz([2,1])/2), (target_sz([2,1]))]; 
-        rectangle('Position',rect_position,'LineWidth',4,'EdgeColor','r');
-        hold on;
-        text(5, 18, strcat('#',num2str(frame)), 'Color','y', 'FontWeight','bold', 'FontSize',20);
-%         set(gca,'position',[0 0 1 1]); 
-        pause(0.001); 
-        hold off;
-        drawnow;
+    if frame == 1,  %first frame, create GUI
+            figure
+            im_handle = imagesc(uint8(img));
+            rect_handle = rectangle('Position',rect_position,'LineWidth',2,'EdgeColor','r');
+            tex_handle = text(5, 18, strcat('#',num2str(frame)), 'Color','y', 'FontWeight','bold', 'FontSize',20);
+            drawnow;
+    else
+        try  %subsequent frames, update GUI
+			set(im_handle, 'CData', img)
+			set(rect_handle, 'Position', rect_position)
+            set(tex_handle, 'string', strcat('#',num2str(frame)))
+%             pause(0.001);
+            drawnow;
+		catch  % #ok, user has closed the window
+			return
+        end
+    end
+%         imagesc(uint8(img))
+%         colormap(gray)
+%         rect_position = [pos([2,1]) - (target_sz([2,1])/2), (target_sz([2,1]))]; 
+%         rectangle('Position',rect_position,'LineWidth',4,'EdgeColor','r');
+%         hold on;
+%         text(5, 18, strcat('#',num2str(frame)), 'Color','y', 'FontWeight','bold', 'FontSize',20);
+% %         set(gca,'position',[0 0 1 1]); 
+%         pause(0.001); 
+%         hold off;
+%         drawnow;
 end
 
